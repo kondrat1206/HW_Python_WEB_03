@@ -33,6 +33,7 @@ def factorize_mult(*numbers):
         process = Process(target=factorize_single, args=(num, result_queue))
         processes.append(process)
         process.start()
+        print(processes)
 
     for process in processes:
         process.join()

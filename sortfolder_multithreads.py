@@ -2,6 +2,7 @@ import sys
 import os
 import shutil
 import re
+from concurrent.futures import ThreadPoolExecutor
 
 def check_args(arg):
 
@@ -37,6 +38,7 @@ def list_files_recursive(real_path):
 
 
 def normalize(dir):
+    new_dir = dir
     list_files = list_files_recursive(dir)
     for file in list_files:
         file = re.sub(r'[\\]', '/', file) # Полный путь к файлу
@@ -78,10 +80,8 @@ def sort(library, extension, file, new_dir):
         excluded_dirs.append(key)
 
     file = re.sub(r'[\\]', '/', file)
-    print(file)
-    print(new_dir)
     filedir_src = file.split(new_dir)[1].split('/')[1]
-    #print(filedir_src)
+
     if not os.path.exists(new_dir):
         os.makedirs(new_dir)
     is_recorded = False
@@ -155,28 +155,33 @@ def unpack_archives(library, archive_dir):
                         if not os.path.exists(unpacked_dir):
                             os.makedirs(unpacked_dir)
                         shutil.unpack_archive(file, unpacked_dir)
-            
-
-if __name__ == '__main__':
 
 
-    library = {'images':('JPEG', 'PNG', 'JPG', 'SVG'),
-               'video':('AVI', 'MP4', 'MOV', 'MKV'),
-               'documents':('DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX'),
-               'audio':('MP3', 'OGG', 'WAV', 'AMR'),
-               'archives':('ZIP', 'GZ', 'TAR'),
-               'scripts':('JS', 'CSS')
-              }
+def process_file(library, file, new_dir):
+
+    extension = file.split(".")[-1]  # Получаем расширение файла
+    sort(library, extension, file, new_dir)
+
+
+def main():
+
+    library = {'images': ('JPEG', 'PNG', 'JPG', 'SVG'),
+               'video': ('AVI', 'MP4', 'MOV', 'MKV'),
+               'documents': ('DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX'),
+               'audio': ('MP3', 'OGG', 'WAV', 'AMR'),
+               'archives': ('ZIP', 'GZ', 'TAR'),
+               'scripts': ('JS', 'CSS')
+               }
 
     real_path = check_args(sys.argv)
-    
     new_dir = real_path
-    
+
     list_files = list_files_recursive(real_path)
-    for file in list_files:
-        filename = file.split("/")[-1]  # Получаем имя файла с расширением
-        extension = file.split(".")[-1]  # Получаем расширение файла
-        sort(library, extension, file, new_dir)
+
+    with ThreadPoolExecutor() as executor:
+        # Используем map для распределения файлов по потокам
+        executor.map(lambda file: process_file(library, file, new_dir), list_files)
+
     print('Файлы отсортированы')
 
     archive_dir = f'{real_path}/archives'
@@ -193,3 +198,8 @@ if __name__ == '__main__':
 
     remove_empty_directories(new_dir)
     print(f'Ваши файлы отсортированы в директории {new_dir}, пустые папки удалены')
+            
+
+if __name__ == '__main__':
+
+    main()

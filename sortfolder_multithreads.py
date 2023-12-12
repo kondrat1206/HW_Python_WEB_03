@@ -7,7 +7,7 @@ def check_args(arg):
 
     if len(arg) < 2:
         print("Отсутствует аргумент командной строки. Пожалуйста, укажите путь к вашей папке.")
-        print("Например: main.py c:/Users/Name/Desktop/Мотлох")
+        print("Например: sortfolder_multithreads.py c:/Users/Name/Desktop/Мотлох")
         exit()
     else:
         path_dir = arg[1]

@@ -1,5 +1,5 @@
 import timeit
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, cpu_count
 
 def timing_decorator(func):
     def wrapper(*args, **kwargs):
@@ -29,18 +29,22 @@ def factorize_mult(*numbers):
     result_queue = Queue()
     processes = []
 
-    for num in numbers:
+    num_processes = cpu_count()  # Получаем количество ядер CPU
+
+    for i, num in enumerate(numbers):
         process = Process(target=factorize_single, args=(num, result_queue))
         processes.append(process)
         process.start()
         print(processes)
 
-    for process in processes:
-        process.join()
+        # Ограничиваем количество процессов по числу ядер CPU
+        if (i + 1) % num_processes == 0 or (i + 1) == len(numbers):
+            for p in processes:
+                p.join()
+            processes = []
 
     result = [result_queue.get() for _ in numbers]
     return result
-
 
 
 if __name__ == "__main__":
